@@ -1,0 +1,195 @@
+/*
+-Basic schema of MongoDB (and document noSQL servers) are:
+    Databases ( Collections (Documents/BSON (Fields)))
+
+-Compared to RDBMS and DDL schemas:
+    Databases ( Tables (Rows (Columns)))
+*/
+
+/* Basic Methods */
+
+// Show the databases listed
+
+show databases
+
+// Show what database you are in
+
+db
+
+// Go into database
+
+use <database_name>
+
+// Creating database (if it doesn't exist yet. 
+//                   Won't show using "show databases" without documents)
+use FakeCompanyInc
+use DatabaseToDelete
+
+// Deleting a database AKA "Dropping" a database
+//          While in "DatabaseToDelete"...
+use DatabaseToDelete
+db.dropDatabase()
+
+// Creating collection (name of collection must be string)
+use FakeCompanyInc
+db.createCollection("Employees")
+db.createCollection("CollectionToDelete")
+db.createCollection("Products")
+
+//      Options: Capped (meaning collection is fixed size), 
+//               For capped collections: Max size is 6142800 bytes, Max documents allowed is 3
+db.createCollection("Announcements", {capped: true, size: 6142800, max : 3})
+
+// Creating collection simply by inserting document(s)
+db.Clients.insert({name: "John Smith", age: 45, 
+fake_company_sub: false, join_date: Date(), email: "johnsmith@fakemail.com", credit: 10.49})
+
+// Display collections
+show collections
+
+// Delete collection (returns true if drop was successful)
+db.CollectionToDelete.drop()
+
+// Inserting documents
+//      Datatypes in mongo: string, integer, double, bool, arrays, timestamp, object, null, symbol, date, objectID, code, regex, min/max keys 
+db.Employees.insert({name: "Harry Peter", title: "Software Engineer", tenure: false, age: 25, 
+salary: 67050.50, hourly_wage: null, hire_date: new Date("2019-04-13"),
+address:{street: "2400 S, 40 E", city: "Chicago", zip: "79832"}})
+
+db.Employees.insert({name: "Jacob Hannover", title: "SCRUM Master", tenure: true, age: 45, 
+salary: 52000.00, hourly_wage: null, hire_date: new Date("2009-07-01"),
+address:{street: "502 N, 502 E", city: "Chicago", zip: "79832"}})
+
+db.Employees.insert({name: "Mary Taylor", title: "Web Developer", tenure: false, age: 29, 
+salary: 70000.00, hourly_wage: null, hire_date: new Date("2015-07-13"),
+address:{street: "1500 N, 326 W", city: "Aurora", zip: "79800"}})
+
+// Inserting multiple documents at once
+db.Products.insert([{title: "Battle-axe", price: 79.99, weight: 40.3, height: 60.0,
+on_sale:false, sale_discount:0, add_date: Date(), color_options:["red","blood-red","hot-pink"]},
+{title: "Pikmin plushie", price: 29.99, weight: 0.65, height: 8.2, 
+on_sale:true, sale_discount:10.00, add_date: new Date("2018-08-15"), color_options:["red","purple","rock"]}])
+
+db.Clients.insert([{name:"Prue Sanderson", age: 20, fake_company_sub:true,
+join_date: new Date("2012-06-06"), email:"namesoundselderly@fakemail.com", credit:0.00},
+{name:"Shian Gan", age: 30, fake_company_sub:true, join_date:new Date("2013-04-15"),
+email: "bikegirl@fakemail.com", credit: 100.00}, {name:"Karl Nielson", 
+age: 34, fake_company_sub:false, join_date: Date(), email:"nerd345601@alternativemail.com",
+credit: 0.00}])
+
+// Insert multiple documents into capped (should only show three)
+db.Announcements.insert([{value:"Hello everyone, just checking that everyone is doing well.
+Meeting at 3:00pm"}, {value: "Today is November 16th and it has come to my attention that we have very
+few products! Not great for a business, huh? Fix that!"}, {value:"Happy Birthday to Mary Taylor, who has turned 29!"},
+{value:"CEO signing off for today!"}])
+
+// Deleting documents AKA "removing" documents
+db.Products.remove({title:"Battle-axe"})
+
+/* Basic Queries */
+
+// Retrieve all documents in collection
+db.Products.find()
+
+// Retrieve all documents in collection formatted for easier reading
+db.Employees.find().pretty()
+
+// Retrieve all documents in capped collection (should only show 3 despite inserting 4)
+db.Announcements.find().pretty()
+
+// Retrieve only certain fields from all documents (name and age from employees)
+db.Employees.find({ }, {name:1, age:1})
+
+// Retrieve only certain fields and hide _id from all documents (name and tenure)
+db.Employees.find({}, {name:1, tenure:1, _id:0})
+
+// Retrieve document with equality condition
+//      Name = Mary Taylor
+db.Employees.find({name:"Mary Taylor"}).pretty()
+
+// Retrieve document with multiple equality conditions (equals values in array)
+//      Name = Mary Taylor or Jacob Hannover
+db.Employees.find({name:{$in:["Mary Taylor", "Jacob Hannover"]}}).pretty()
+
+// Retrieve document with greater than operation 
+//      Salary greater than 55000.00
+//      MongoDB also supports: less than, less than equals, greater than equals
+//                              not equals, values in array, values not in array
+db.Employees.find({salary:{$gt:55000.00}}).pretty()
+
+// Retrieve document that is not equals
+//      Title is not SCRUM Master
+db.Employees.find({title:{$ne:"SCRUM Master"}}).pretty()
+
+// Retrieve document on nested field (object type)
+//      Uses dot notation (requires quotation marks on left side)
+//      Employees living in Chicago
+db.Employees.find({"address.city": "Chicago"}).pretty()
+
+// AND condition
+//      Age greater than or equal to 30 and a subscriber to company
+//      MongoDB also supports: OR, NOR, NOT, and combinations of those
+db.Clients.find({$and:[{age:{$gte:30}},{fake_company_sub:true}]}).pretty()
+
+// NOT condition
+//      Employees that don't make more than 
+//      (NOT cannot be used in place of NE)
+db.Employees.find({salary:{$not:{$gt:60000}}}).pretty()
+
+// Update document
+//      Give Jacob a raise to 58500
+db.Employees.update({name:"Jacob Hannover"}, {$set:{salary:58500}})
+
+// Update multiple documents
+//      Monthly special! : Make all non company subs into subs
+//      Syntax without "{multi:true}": updateMany()
+db.Clients.update({fake_company_sub:false}, {$set:{fake_company_sub:true}}, 
+{multi:true})
+
+// Replace document
+//      Change everything about Karl, add a field for his allergy
+//      Must specify the ID so it doesn't do an insert instead
+db.Clients.save({_id: ObjectId("5fb3080c852d45985fb8da39"), name:"Karl Wilson", age:35,
+fake_company_sub:false, join_date:Date(), email:"bignerd@alternativemail.com",
+credit: 0.00, allergy: "peanuts"})
+
+// Delete document
+//      Delete John Smith
+//      (Can't delete from capped collections)
+db.Clients.remove({name: "John Smith"})
+
+// Delete all documents (I didn't run this)
+db.Announcements.remove({})
+
+// Retrieve only some fields of each document AKA "Projection"
+//      (Can only be 0 or 1 per field)
+db.Clients.find({}, {_id: 0, age:1, credit:1})
+
+// Retrieve only some fields of each document with condition
+db.Clients.find({name:"Karl Wilson"}, {_id:0, name:1, age:1, email:1})
+
+// Retrieve limited number of documents
+//      Only show 2 employees
+db.Employees.find().limit(2).pretty()
+
+// Skip documents
+db.Employees.find().skip(1).pretty()
+
+// Sort documents
+//      MongoDB supports: ascending (1), descending (-1)
+//      Can sort on numbers or string
+db.Employees.find().sort({age:-1}).pretty()
+
+// Indexing documents
+//      (Indexing makes scanning collections much more efficient)
+//      (1 is ascending order, -1 is descending order)
+db.Clients.createIndex({name:1})
+
+// Indexing documents on multiple fields
+db.Clients.createIndex({credit:1, join_date:-1})
+
+// Remove index
+db.Clients.dropIndex({credit:1, join_date:-1})
+
+// Get indexes
+db.Clients.getIndexes()

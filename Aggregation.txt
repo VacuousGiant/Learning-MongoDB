@@ -1,0 +1,17 @@
+// Sum the total salary of all employees
+db.Employees.aggregate([{$group: {_id:"Total Salary", tot_salary:{$sum:"$salary"}}}])
+
+// Average the total salary of all employees
+db.Employees.aggregate([{$group: {_id:"Average Salary", avg_salary:{$avg:"$salary"}}}])
+
+// Get the document with the MIN salary
+db.Employees.aggregate([{$group: {_id:"Minimum Salary", min_salary:{$min:"$salary"}}}])
+
+// MAX salary
+db.Employees.aggregate([{$group: {_id:"Maximum Salary", max_salary:{$max:"$salary"}}}])
+
+/* Create Backup */
+mongodump
+
+// Restore Backup
+mongorestore
