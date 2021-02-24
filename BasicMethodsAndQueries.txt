@@ -1,3 +1,5 @@
+//Edited Feb 2021
+
 /*
 -Basic schema of MongoDB (and document noSQL servers) are:
     Databases ( Collections (Documents/BSON (Fields)))
