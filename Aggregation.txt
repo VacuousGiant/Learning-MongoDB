@@ -1,3 +1,5 @@
+//Edited Feb 2021
+
 // Sum the total salary of all employees
 db.Employees.aggregate([{$group: {_id:"Total Salary", tot_salary:{$sum:"$salary"}}}])
 
